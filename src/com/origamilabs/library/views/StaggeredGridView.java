@@ -679,6 +679,9 @@ public class StaggeredGridView extends ViewGroup {
             mSelectorRect.setEmpty();
         }
 
+        if (!awakenScrollBars())
+            invalidate();
+
         return deltaY == 0 || movedBy != 0;
     }
 
@@ -2636,4 +2639,97 @@ public class StaggeredGridView extends ViewGroup {
 	public void setDrawSelectorOnTop(boolean mDrawSelectorOnTop) {
 		this.mDrawSelectorOnTop = mDrawSelectorOnTop;
 	}
+
+    protected int getScrollChildBottom() {
+        final int count = getChildCount();
+        if (count == 0)
+            return 0;
+        return getChildAt(count - 1).getBottom();
+    }
+
+    protected int getFillChildTop() {
+        final int count = getChildCount();
+        if (count == 0)
+            return 0;
+        return getChildAt(0).getTop();
+    }
+
+    /**
+     * <p>Compute the vertical extent of the horizontal scrollbar's thumb
+     * within the vertical range. This value is used to compute the length
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeVerticalScrollRange()} and
+     * {@link #computeVerticalScrollOffset()}.</p>
+     *
+     * <p>The default extent is the drawing height of this view.</p>
+     *
+     * @return the vertical extent of the scrollbar's thumb
+     */
+
+    @Override
+    protected int computeVerticalScrollExtent() {
+        return super.computeVerticalScrollExtent();
+    }
+
+    /**
+     * <p>The scroll range of a scroll view is the overall height of all of its
+     * children.</p>
+     */
+
+    @Override
+    protected int computeVerticalScrollRange() {
+        int result;
+        if (super.isVerticalScrollBarEnabled()) {
+            result = Math.max(mItemCount*100, 0);
+        } else {
+            result = mItemCount;
+        }
+        return result;
+    }
+
+    /**
+     * <p>Compute the vertical offset of the vertical scrollbar's thumb
+     * within the horizontal range. This value is used to compute the position
+     * of the thumb within the scrollbar's track.</p>
+     *
+     * <p>The range is expressed in arbitrary units that must be the same as the
+     * units used by {@link #computeVerticalScrollRange()} and
+     * {@link #computeVerticalScrollExtent()}.</p>
+     *
+     * <p>The default offset is the scroll offset of this view.</p>
+     *
+     * @return the vertical offset of the scrollbar's thumb
+     */
+
+    @Override
+    protected int computeVerticalScrollOffset() {
+
+        final int firstPosition = mFirstPosition;
+        final int childCount = getChildCount();
+        if (firstPosition >= 0 && childCount > 0) {
+            if (super.isVerticalScrollBarEnabled()) {
+                final View view = getChildAt(0);
+                final int top = getFillChildTop();
+                int height = view.getHeight();
+                if (height > 0) {
+                    return Math.max(firstPosition*100 - (top*100*mColCount) / height, 0);
+                }
+            } else {
+                int index;
+                final int count = mItemCount;
+                if (firstPosition == 0) {
+                    index = 0;
+                } else if (firstPosition + childCount == count) {
+                    index = count;
+                } else {
+                    index = firstPosition + childCount / 2;
+                }
+                int vertOffset = (int) (firstPosition + childCount * (index / (float) count));
+                return vertOffset;
+            }
+        }
+        return 0;
+    }
 }
