@@ -234,6 +234,12 @@ public class StaggeredGridView extends ViewGroup {
      */
     private Rect mTouchFrame;
 
+    /**
+     * move distance
+     */
+    private int mMaxScroller = 0;
+
+
     private static final class LayoutRecord {
         public int column;
         public long id = -1;
@@ -916,6 +922,14 @@ public class StaggeredGridView extends ViewGroup {
         }
     }
 
+    private void computeVerticalScrollMaxDistance() {
+        if (getChildCount() > 0) {
+            final View view = getChildAt(0);
+            mMaxScroller = ((mItemCount + mColCount -1 )/mColCount * view.getHeight());
+            mMaxScroller = mColCount * mMaxScroller-(getBottom()-getTop());
+        }
+    }
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
     	mInLayout = true;
@@ -926,6 +940,8 @@ public class StaggeredGridView extends ViewGroup {
         final int height = b - t;
         mTopEdge.setSize(width, height);
         mBottomEdge.setSize(width, height);
+
+        computeVerticalScrollMaxDistance();
     }
 
     private void populate(boolean clearData) {
@@ -2048,6 +2064,7 @@ public class StaggeredGridView extends ViewGroup {
 
             // TODO: consider repopulating in a deferred runnable instead
             // (so that successive changes may still be batched)
+            computeVerticalScrollMaxDistance();
             requestLayout();
         }
 
@@ -2680,13 +2697,7 @@ public class StaggeredGridView extends ViewGroup {
 
     @Override
     protected int computeVerticalScrollRange() {
-        int result;
-        if (super.isVerticalScrollBarEnabled()) {
-            result = Math.max(mItemCount*100, 0);
-        } else {
-            result = mItemCount;
-        }
-        return result;
+        return mMaxScroller;
     }
 
     /**
@@ -2714,7 +2725,7 @@ public class StaggeredGridView extends ViewGroup {
                 final int top = getFillChildTop();
                 int height = view.getHeight();
                 if (height > 0) {
-                    return Math.max(firstPosition*100 - (top*100*mColCount) / height, 0);
+                    return Math.max(firstPosition*height - top*mColCount, 0);
                 }
             } else {
                 int index;
